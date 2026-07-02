@@ -24,8 +24,9 @@ public class CatalogAdminController : ControllerBase
     {
         using var conn = new SqlConnection(DbConnectionString);
         conn.Open();
-        var sql = "SELECT Id, Name, Price FROM Catalog WHERE Name LIKE '%" + name + "%'";
+        var sql = "SELECT Id, Name, Price FROM Catalog WHERE Name LIKE @name";
         using var cmd = new SqlCommand(sql, conn);
+        cmd.Parameters.AddWithValue("@name", $"%{name}%");
         using var reader = cmd.ExecuteReader();
 
         var results = new List<string>();
