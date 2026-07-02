@@ -1,4 +1,5 @@
 using System.Data.SqlClient;
+using System.IO;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
@@ -56,8 +57,29 @@ public class CatalogAdminController : ControllerBase
     [HttpGet("download")]
     public IActionResult Download([FromQuery] string file)
     {
-        var basePath = @"C:\eshop\uploads\";
-        var fullPath = basePath + file;
+        if (string.IsNullOrWhiteSpace(file) ||
+            file.Contains("..") ||
+            file.Contains(Path.DirectorySeparatorChar) ||
+            file.Contains(Path.AltDirectorySeparatorChar) ||
+            Path.IsPathRooted(file))
+        {
+            return BadRequest("Invalid file path.");
+        }
+
+        var basePath = Path.GetFullPath(@"C:\eshop\uploads\");
+        var fullPath = Path.GetFullPath(Path.Combine(basePath, file));
+
+        if (!fullPath.StartsWith(basePath + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase) &&
+            !string.Equals(fullPath, basePath, StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Invalid file path.");
+        }
+
+        if (!System.IO.File.Exists(fullPath))
+        {
+            return NotFound();
+        }
+
         var bytes = System.IO.File.ReadAllBytes(fullPath);
         return File(bytes, "application/octet-stream", file);
     }
